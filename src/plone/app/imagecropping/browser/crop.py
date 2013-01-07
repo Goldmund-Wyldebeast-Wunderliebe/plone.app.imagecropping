@@ -35,7 +35,10 @@ class CroppingView(BrowserView):
         # plone/app/imaging/cropping.py
 
         field = self.context.getField(fieldname)
-        handler = IImageScaleHandler(field)
+        if hasattr(field,'getHandler'):
+            handler = field.getHandler()
+        else:
+            handler = IImageScaleHandler(field)
 
         # TODO this is archetype only
         value = field.get(self.context)
@@ -53,9 +56,14 @@ class CroppingView(BrowserView):
         cropped_image_file.seek(0)
 
         sizes = field.getAvailableSizes(self.context)
-        w, h = sizes[scale]
-        data = handler.createScale(self.context, scale, w, h,
-                                   data=cropped_image_file.read())
+        #regular scale
+        if len(sizes[scale]) ==3:
+            w, h, s = sizes[scale]
+            data = handler.createScale(self.context, scale, w, h, data=cropped_image_file.read())
+        else:
+            w, h = sizes[scale]
+            data = handler.createScale(self.context, scale, w, h,
+                                    data=cropped_image_file.read())
 
         # store scale for classic <fieldname>_<scale> traversing
         handler.storeScale(self.context, scale, **data)
